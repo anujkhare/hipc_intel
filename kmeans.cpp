@@ -12,7 +12,7 @@ using namespace std;
 #define N_CLUSTERS 25	// No. of clusters
 #define RAND_SEED 1		// Seed for random generator
 #define N_POINTS 40000
-#define MAX_ITER 20
+#define MAX_ITER 30
 
 typedef struct {
 	long double x, y;
@@ -79,13 +79,13 @@ long double dist_euc (vector<long double> a,
 }
 
 int min_dist_centroid_index(vector<vector<long double> > &centroids,
-					  		<vector<long double> &point)
+					  		vector<long double> &point)
 {
 	int c_ind = 0;
 	long double dist, min_dist = LDBL_MAX;
 
 	for(int i=0; i<centroids.size(); ++i) {
-		dist = dist_euc(centroids[i], data[ind]);
+		dist = dist_euc(centroids[i], point);
 
 		if(dist < min_dist) {
 			min_dist = dist;
@@ -96,6 +96,35 @@ int min_dist_centroid_index(vector<vector<long double> > &centroids,
 	return c_ind;
 }
 	
+void update_cluster_centroids(vector<vector<long double> > &data,
+							  vector<vector<long double> > &centroids,
+							  vector<int> &labels)
+{
+	int K = centroids.size();
+	int M = centroids[0].size();
+
+	vector<long double> zero(M, 0.0);
+	vector<int> counts(K, 0);
+
+	for(int i=0; i<K; ++i) {
+		centroids[i] = zero;
+	}
+
+	for(int i=0; i<N_POINTS; ++i) {
+		for(int j=0; j<M; ++j) {
+			centroids[labels[i]][j] += data[i][j];
+		}
+		counts[labels[i]]++;
+	}
+
+	for(int i=0; i<K; ++i) {
+		for(int j=0; j<M; ++j) {
+			centroids[i][j] /= (1.0 * counts[i]);
+		}
+	}
+}
+
+
 void cluster(vector<vector<long double> > &data,
 			 vector<int> &labels, int K)
 {
@@ -117,18 +146,17 @@ void cluster(vector<vector<long double> > &data,
 
 	// Stopping Criterion: less than x% change in cluster ass.
 	// AND max_iters
-	// Right now just like this :P
 
 	for(int i=0; i<MAX_ITER; ++i) {
 
+		cout<<i<<endl;
 		// Update centroids by finding min distance centroid
-		for(int ind=0; i<N_POINTS; ++ind) {
-			labels[i] = min_dist_centroid_index(centroids, data[i]);
+		for(int ind=0; ind<N_POINTS; ++ind) {
+			labels[ind] = min_dist_centroid_index(centroids, data[ind]);
 		}
 
 		// Update centroids by finding mean of points in cluster
-		
-
+		update_cluster_centroids(data, centroids, labels);
 	}
 }
 
@@ -143,7 +171,7 @@ int main ()
 
 	cluster(data, labels, N_CLUSTERS);
 
-	//write_to_csv(labels);
+	write_to_csv(labels);
 	//cout<<centroids.size()<<endl;
 	return 0;
 }
