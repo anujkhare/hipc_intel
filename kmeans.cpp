@@ -10,9 +10,9 @@
 using namespace std;
 
 #define N_CLUSTERS 25	// No. of clusters
-#define RAND_SEED 100		// Seed for random generator
+#define RAND_SEED 696716708		// Seed for random generator
 #define N_POINTS 40000
-#define MAX_ITER 50
+#define MAX_ITER 20
 
 typedef struct {
 	long double x, y;
@@ -21,7 +21,7 @@ typedef struct {
 void get_data(vector<vector<long double> > &data)
 {
 	data.resize(N_POINTS);
-	ifstream file("/root/code/intel/data.csv");
+	ifstream file("/root/code/intel/data/data.csv");
 	string line, word;
 
 	stringstream cell;
@@ -45,7 +45,7 @@ void get_data(vector<vector<long double> > &data)
 		k++;
 
 	}
-	cout<<k<<endl;
+	//cout<<k<<endl;
 	file.close();
 }
 
@@ -126,13 +126,12 @@ void update_cluster_centroids(vector<vector<long double> > &data,
 
 
 void cluster(vector<vector<long double> > &data,
-			 vector<int> &labels, int K,
-			 int seed)
+			 vector<int> &labels, int K)
 {
 	vector<vector<long double> > centroids(K);
 
 	// Initialize centroids by randomly selecting values
-	srand(seed);				// FIXED SEED
+	srand(RAND_SEED);				// FIXED SEED
 	vector<int> r;
 	for(int i=0; i<N_POINTS; ++i)
 		r.push_back(i);
@@ -150,7 +149,7 @@ void cluster(vector<vector<long double> > &data,
     
 	for(int i=0; i<MAX_ITER; ++i) {
     
-		//cout<<i<<endl;
+		cout<<i<<endl;
 		// Update centroids by finding min distance centroid
 		for(int ind=0; ind<N_POINTS; ++ind) {
 			labels[ind] = min_dist_centroid_index(centroids, data[ind]);
@@ -159,35 +158,22 @@ void cluster(vector<vector<long double> > &data,
 		// Update centroids by finding mean of points in cluster
 		update_cluster_centroids(data, centroids, labels);
 	}
-
-	stringstream file_name_stream;
-	file_name_stream << "clabels_" << K << "_" << seed << ".csv";
-	cout<<file_name_stream.str()<<endl;
-	write_to_csv(labels, file_name_stream.str());
 }
 
 int main ()
 {
-	//Points data, centroids;
 	vector<vector<long double> > data;
 	cout.precision(100);
 
+	//cout<<"hey1\n";
 	get_data(data);
 	vector<int> labels(data.size(), 0);
+	//cout<<"hey2\n";
 
-	srand(unsigned(time(NULL)));
-	for(int j=15; j<30; ++j) {
-		cout<<j<<endl;
-		for(int i=0; i<15; ++i) {
-			int temp = rand();
-			//cout<<temp<<" ";
-			cluster(data, labels, j, temp);
-		}
-	}
+	cluster(data, labels, N_CLUSTERS);
+	//cout<<"hey3\n";
 
-
-
-	//write_to_csv(labels);
-	//cout<<centroids.size()<<endl;
+	write_to_csv(labels, "output.csv");
+	//cout<<"hey4\n";
 	return 0;
 }
