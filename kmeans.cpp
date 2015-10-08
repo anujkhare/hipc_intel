@@ -12,7 +12,8 @@ using namespace std;
 #define N_CLUSTERS 25	// No. of clusters
 #define RAND_SEED 696716708		// Seed for random generator
 #define N_POINTS 40000
-#define MAX_ITER 20
+#define MAX_ITER 100
+#define MIN_CHANGE 0.005			// Less than 5% change => Terminate
 
 typedef struct {
 	long double x, y;
@@ -124,14 +125,27 @@ void update_cluster_centroids(vector<vector<long double> > &data,
 	}
 }
 
+double get_labels_change_percent(vector<int> &new_labels,
+								 vector<int> &old_labels)
+{
+	int N = new_labels.size();
+
+	double count=0;
+	for(int i=0; i<N; ++i) {
+		if(new_labels[i] != old_labels[i])
+			count++;
+	}
+
+	return count / N;
+}
 
 void cluster(vector<vector<long double> > &data,
 			 vector<int> &labels, int K)
 {
 	vector<vector<long double> > centroids(K);
 
-	// Initialize centroids by randomly selecting values
-	srand(RAND_SEED);				// FIXED SEED
+	/* Initialize centroids by randomly selecting values */
+	srand(RAND_SEED);					  /* FIXED SEED */
 	vector<int> r;
 	for(int i=0; i<N_POINTS; ++i)
 		r.push_back(i);
@@ -140,22 +154,30 @@ void cluster(vector<vector<long double> > &data,
 	for(int i=0; i<K; ++i) {
 		centroids[i] = data[r[i]];
 	}
+
+	/* Store last labeling to compute change */
+	vector<int> old_labels(labels.size(), 0);
     
 	//for(int k=0; k<centroids[0].size(); ++k)
 	//	cout<<centroids[0][k]<<"\t"<<data[r[0]][k]<<endl;
     
-	// Stopping Criterion: less than x% change in cluster ass.
-	// AND max_iters
-    
 	for(int i=0; i<MAX_ITER; ++i) {
     
-		cout<<i<<endl;
-		// Update centroids by finding min distance centroid
+		/* Update labels by finding min distance centroid */
 		for(int ind=0; ind<N_POINTS; ++ind) {
 			labels[ind] = min_dist_centroid_index(centroids, data[ind]);
 		}
-    
-		// Update centroids by finding mean of points in cluster
+
+		//TODO: Make sure we are not getting a worse result now.
+		/* Stopping Criterion: less than MIN_CHANGE change in cluster ass */
+		double change_percent = get_labels_change_percent(labels, old_labels);
+		//cout<<i<<" "<<change_percent<<endl;;
+		if(change_percent < MIN_CHANGE)
+			break;
+
+		old_labels = labels;
+
+		/* Update centroids by finding mean of points in cluster */
 		update_cluster_centroids(data, centroids, labels);
 	}
 }
